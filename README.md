@@ -1,66 +1,398 @@
-# CodeIgniter 4 Application Starter
+<style>
+.is-flex-center {
+  display:flex;
+  justify-content:center;
+  align-items:center;
+}
+.is-column {
+  flex-direction:column;
+}
+</style>
+<div class="is-flex-center is-column">
+  <h1>Codeigniter</h1>
+  <h6>Carlos Rodrigo Sanabria Flores</h6>
+</div>
+<div class="page"></div>
 
-## What is CodeIgniter?
+## Instalación
 
-CodeIgniter is a PHP full-stack web framework that is light, fast, flexible, and secure. 
-More information can be found at the [official site](http://codeigniter.com).
+### Iniciar un nuevo proyecto
 
-This repository holds a composer-installable app starter.
-It has been built from the 
-[development repository](https://github.com/codeigniter4/CodeIgniter4).
+```sh
+composer create-project codeigniter4/appstarter project-name
+```
 
-**This is pre-release code and should not be used in production sites.**
+Ahora podemos ir al nuestro navegador de preferencia para visualizar el home por defecto https://localhost
 
-More information about the plans for version 4 can be found in [the announcement](http://forum.codeigniter.com/thread-62615.html) on the forums.
+![Home](assets/home.png)
 
-The user guide corresponding to this version of the framework can be found
-[here](https://codeigniter4.github.io/userguide/). 
+> Guia para [codeigniter 4](https://codeigniter4.github.io/userguide/)
 
-## Installation & updates
+<div class="page"></div>
 
-`composer create-project codeigniter4/appstarter` then `composer update` whenever
-there is a new release of the framework.
+## Cofiguracion Inicial
 
-When updating, check the release notes to see if there are any changes you might need to apply
-to your `app` folder. The affected files can be copied or merged from
-`vendor/codeigniter4/framework/app`.
+### Cargas Automaticas
 
-## Setup
+Codeigniter 3 nos permitia cargar librarias y helpers automaticamente, en la version 4 debemos crear un `BaseController.php`
 
-Copy `env` to `.env` and tailor for your app, specifically the baseURL
-and any database settings.
+```php
+<?php
+// app/Controllers/BaseController.php
+namespace App\Controllers;
 
-## Important Change with index.php
+use CodeIgniter\Controller;
 
-`index.php` is no longer in the root of the project! It has been moved inside the *public* folder,
-for better security and separation of components.
+class BaseController extends Controller
+{
+    /**
+     * An array of helpers to be loaded automatically upon
+     * class instantiation. These helpers will be available
+     * to all other controllers that extend BaseController.
+     *
+     * @var array
+     */
+    protected $helpers = ['form', 'url'];
 
-This means that you should configure your web server to "point" to your project's *public* folder, and
-not to the project root. A better practice would be to configure a virtual host to point there. A poor practice would be to point your web server to the project root and expect to enter *public/...*, as the rest of your logic and the
-framework are exposed.
+    /**
+     * @var \CodeIgniter\Session\Session
+     */
+    protected $session;
 
-**Please** read the user guide for a better explanation of how CI4 works!
-The user guide updating and deployment is a bit awkward at the moment, but we are working on it!
+    /**
+     * Constructor.
+     */
+    public function initController(
+      \CodeIgniter\HTTP\RequestInterface $request,
+      \CodeIgniter\HTTP\ResponseInterface $response,
+      \Psr\Log\LoggerInterface $logger)
+    {
+        parent::initController($request, $response, $logger);
+        //--------------------------------------------------------------------
+        // Preload any models, libraries, etc, here.
+        //--------------------------------------------------------------------
+        $this->session = \Config\Services::session();
+    }
+}
+```
 
-## Repository Management
+* **Librerias**
+  * [Database](https://codeigniter4.github.io/userguide/database/configuration.html#id1) se carga automaticamente la configuracions se puede modificar en el fichero `.env`
+  * [Session](https://codeigniter4.github.io/userguide/libraries/sessions.html) se debe cargar en el `BaseController::initController`
+  * [Validation](https://codeigniter4.github.io/userguide/libraries/validation.html) la libreria es cargada como el servicio `validator` 
+* **Helpers**
+  * [url](https://codeigniter4.github.io/userguide/helpers/url_helper.html)
+  * [form](https://codeigniter4.github.io/userguide/helpers/form_helper.html)
 
-We use Github issues, in our main repository, to track **BUGS** and to track approved **DEVELOPMENT** work packages.
-We use our [forum](http://forum.codeigniter.com) to provide SUPPORT and to discuss
-FEATURE REQUESTS.
+<div class="page"></div>
 
-This repository is a "distribution" one, built by our release preparation script. 
-Problems with it can be raised on our forum, or as issues in the main repository.
+### Cofigurar la base de datos
 
-## Server Requirements
+```sh
+cp env .env
+```
 
-PHP version 7.2 or higher is required, with the following extensions installed: 
+Editar las siguientes variables de entorno
 
-- [intl](http://php.net/manual/en/intl.requirements.php)
-- [libcurl](http://php.net/manual/en/curl.requirements.php) if you plan to use the HTTP\CURLRequest library
+```
+database.default.hostname=localhost
+database.default.database=ci4
+database.default.username=root
+database.default.password=root
+database.default.DBDriver=MySQLi
+```
+<div class="page"></div>
 
-Additionally, make sure that the following extensions are enabled in your PHP:
+## Articulos
 
-- json (enabled by default - don't turn it off)
-- [mbstring](http://php.net/manual/en/mbstring.installation.php)
-- [mysqlnd](http://php.net/manual/en/mysqlnd.install.php)
-- xml (enabled by default - don't turn it off)
+### Controlador Articulos
+
+```php
+<?php
+// app/Controllers/Articulos.php
+namespace App\Controllers;
+
+use App\Models\ArticuloModel;
+
+class Articulos extends BaseController
+{
+    public function index($id = null)
+    {
+        $articuloModel = new ArticuloModel();
+        if (is_null($id)) {
+            return view('articulos', ['data' => $articuloModel->findAll()]);
+        }
+
+        return view('articulo', $articuloModel->find($id));
+    }
+}
+```
+
+### Vista Articulos
+
+```php
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Articulos</title>
+</head>
+
+<body>
+  <div style="height:100vh;display:flex;justify-content:center;align-items:center;flex-direction:column;">
+    <h1>Bienvenido a la web sobre artículos</h1>
+    <a href="<?php echo base_url('formulario'); ?>" title="Añadir articulo">Añadir articulo</a>
+    <p>Estos son los artículos publicados.</p>
+    <?php foreach ($data as $articulo) { ?>
+    <a href="<?php echo base_url(['articulos', $articulo['id']]); ?>" title="Ver articulo">
+    <h2><?php echo $articulo['titulo']; ?></h2>
+    </a>
+    <p><?php echo $articulo['descripcion']; ?></p>
+    <br/>
+    <?php } ?>
+
+  </div>
+</body>
+
+</html>
+```
+
+<div class="page"></div>
+
+### Resultado
+
+![Articulos](./assets/articulos_empty.png)
+
+<div class="page"></div>
+
+### Formulario para crear articulos
+
+#### Controlador
+
+```php
+<?php
+// app/Controllers/Formulario.php
+namespace App\Controllers;
+
+use App\Models\ArticuloModel;
+
+class Formulario extends BaseController
+{
+    public function index()
+    {
+        $messages = [
+            'required' => 'El campo {field} es obligatorio',
+            'max_length' => 'El campo {field} tiene como máximo {param} caracteres.',
+        ];
+        $rules = [
+            'titulo' => [
+              'label' => 'título del artículo',
+              'rules' => 'required|max_length[100]',
+              'errors' => $messages
+            ],
+            'descripcion' => [
+              'label' => 'descripción del artículo',
+              'rules' => 'required|max_length[200]',
+              'errors' => $messages
+            ],
+            'cuerpo' => [
+              'label' => 'cuerpo del artículo',
+              'rules' => 'required',
+              'errors' => ['required' => $messages['required']]
+            ],
+        ];
+
+        if (!$this->validate($rules)) {
+            return view('formulario', [
+                'errors' => $this->request->getPostGet('submit') ? $this->validator->listErrors() : '',
+            ]);
+        }
+
+        $articuloModel = new ArticuloModel();
+        $data = $this->request->getPost();
+        $articuloModel->insert($data);
+
+        return view('articulo', $data);
+    }
+}
+```
+<div class="page"></div>
+
+#### Vista
+
+```php
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Articulos</title>
+</head>
+
+<body>
+  <div style="height:100vh;display:flex;justify-content:center;align-items:center;flex-direction:column;">
+  <a href="<?php echo base_url('articulos'); ?>" title="Articulos">Articulos</a>
+<h1> Insertar artículo </h1>
+<?php
+echo form_open(base_url('formulario'), ['name' => 'mi_form', 'id' => 'form']);
+echo form_label('Titulo', 'Titulo', ['class' => 'label']);
+echo form_input('titulo', '', 'class="input"'); ?> <br />
+<br />
+<?php echo form_label('Descripción', 'Descripción', ['class' => 'label']); ?>
+<br/>
+<?php echo form_textarea('descripcion', '', 'class="textarea" row="25px"'); ?>
+<br />
+<br />
+<?php echo form_label('Cuerpo', 'Cuerpo', ['class' => 'label']); ?>
+<br /> <?php echo form_textarea('cuerpo', '', 'class="textarea" row="50px"'); ?>
+<br />
+<?php echo form_submit('submit', 'Enviar datos', 'class="submit"');
+ echo form_close(); ?>
+<br />
+<h3>Posibles errores</h3> 
+<?php echo $errors; ?>
+</div>
+</body>
+
+</html>
+```
+
+<div class="page"></div>
+
+**Formulario Inicial**
+
+![Formulario](./assets/formulario.png)
+
+<div class="page"></div>
+
+**Formulario con errores**
+
+![Formulario](./assets/formulario_error.png)
+
+<div class="page"></div>
+
+### Un Articulo
+#### Vista
+
+```php
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Articulos</title>
+</head>
+
+<body>
+  <div style="height:100vh;display:flex;justify-content:center;align-items:center;flex-direction:column;">
+    <a href="<?php echo base_url('articulos'); ?>" title="Ver todos los articulos">
+    Ver todos los articulos</a>
+    <p>Este es el artículo.</p>
+    <h1><?php echo $titulo; ?></h1>
+    <h3><?php echo $descripcion; ?></h3>
+    <p><?php echo $cuerpo; ?></p>
+  </div>
+</body>
+
+</html>
+```
+
+![Un Articulo](./assets/articulo.png)
+
+<div class="page"></div>
+
+## Interactuar con la Base de datos
+
+En esta version podemos utilizar migrations para crear nuestra base de datos a partir de codigo php.
+
+### Creando la tabla articulos
+
+Codeigniter nos proporciona una aplicacion cli con la que podemos manegar nuestra migrations
+
+Para crear un template de migracion.
+
+```sh
+php spark migrate:create Articulos
+```
+
+```php
+<?php
+
+namespace App\Database\Migrations;
+
+use CodeIgniter\Database\Migration;
+
+class Articulos extends Migration
+{
+    public function up()
+    {
+        $this->forge->addField([
+            'id' => [
+                'type' => 'INT',
+                'constraint' => 5,
+                'unsigned' => true,
+                'auto_increment' => true,
+            ],
+            'titulo' => [
+                'type' => 'VARCHAR',
+                'constraint' => '100',
+            ],
+            'descripcion' => [
+                'type' => 'VARCHAR',
+                'constraint' => '100',
+            ],
+            'cuerpo' => [
+                'type' => 'TEXT',
+            ],
+        ]);
+        $this->forge->addKey('id', true);
+        $this->forge->createTable('articulos');
+    }
+
+    //--------------------------------------------------------------------
+
+    public function down()
+    {
+        $this->forge->dropTable('articulos');
+    }
+}
+```
+
+Para aplicar las migraciones
+
+```sh
+php spark migrate
+```
+
+<div class="page"></div>
+
+## Creando el Modelo Articulos
+
+```php
+<?php
+
+namespace App\Models;
+
+use CodeIgniter\Model;
+
+class ArticuloModel extends Model
+{
+    protected $table = 'articulos';
+    protected $primaryKey = 'id';
+    protected $returnType = 'array';
+    protected $useSoftDeletes = false;
+    protected $DBGroup = 'default';
+
+    protected $allowedFields = ['titulo', 'descripcion', 'cuerpo'];
+}
+```
+
+Los modelos en codeigniter 4 nos proporcionan una serie de metodos por defecto:
+
+* `find($id)` : Devuelve un solo resultado que coincida con el id
+* `findAll()`: Devulve un array con toda las filas de un modelo
+* `insert($data)`: Añade una nueva fila a partir de un array asociativo siempre que conentga las claves de `$allowedFields`
