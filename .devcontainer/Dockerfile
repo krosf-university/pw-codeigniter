@@ -23,7 +23,7 @@ ARG COMMON_SCRIPT_SHA="dev-mode"
 # ARG PHP_CS_FIXER_URL=https://github.com/FriendsOfPHP/PHP-CS-Fixer/releases/download/v$PHP_CS_FIXER_VERSION/php-cs-fixer.phar
 
 # Install composer from official image
-COPY --from=composer:1.9.3 /usr/bin/composer /usr/bin/composer
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 COPY --from=mlocati/php-extension-installer /usr/bin/install-php-extensions /usr/bin/
 
 # Change APACHE_DOCUMENT_ROOT
