@@ -4,7 +4,7 @@ services:
     build:
       context: .
     volumes:
-      - ..:/workspace
+      - remote-workspace:/workspace
     command: apache2-foreground
     ports:
       - 8088:80
@@ -19,3 +19,4 @@ services:
 
 volumes:
   mysql-data:
+  remote-workspace:
